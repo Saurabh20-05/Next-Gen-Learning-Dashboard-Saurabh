@@ -26,8 +26,12 @@ const colorMap = {
 function DynamicIcon({ name, className }: { name: string; className?: string }) {
   const iconKey = name as IconName;
 
-  const IconComponent = LucideIcons[iconKey] ?? LucideIcons.BookOpen;
-  return <IconComponent size={18} className={className} />;
+const IconComponent =
+  (LucideIcons[iconKey as keyof typeof LucideIcons] ??
+    LucideIcons.BookOpen) as React.ComponentType<{
+      size?: number;
+      className?: string;
+    }>;  return <IconComponent size={18} className={className} />;
 }
 
 export function CourseCard({ course, index = 0, glowColor = "cyan" }: CourseCardProps) {
