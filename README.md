@@ -26,8 +26,8 @@ A dark-mode student dashboard where students can track their active courses, lea
 ## Running Locally
 
 ```bash
-git clone https://github.com/your-username/next-gen-learning-dashboard
-cd next-gen-learning-dashboard
+git clone https://github.com/Saurabh20-05/Next-Gen-Learning-Dashboard-Saurabh
+cd next-gen-learning-dashboard-saurabh
 npm install
 ```
 
