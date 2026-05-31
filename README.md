@@ -2,8 +2,7 @@
 
 A student dashboard built for a frontend engineering challenge. The goal was to build something that actually felt premium and worked with real live data — not just a Figma mockup thrown into code.
 
-Live demo: [your-vercel-url-here]  
-GitHub: [your-github-url-here]
+Live demo: https://next-gen-learning-dashboard-saurabh.vercel.app/
 
 ---
 
