@@ -1,80 +1,81 @@
-# Learning Platform
+# Next-Gen Learning Platform
 
-Built this for a frontend challenge. The brief was to make something that felt premium and actually worked with live data — not just a pretty static mockup.
+A student dashboard built for a frontend engineering challenge. The goal was to build something that actually felt premium and worked with real live data — not just a Figma mockup thrown into code.
 
-Live demo: [your-vercel-url-here]
-
----
-
-## What I Built
-
-A dark-mode dashboard where students can track their active courses, learning streaks, and weekly activity — all fetched live from a Supabase PostgreSQL database. The UI is built around a Bento Grid layout with a collapsible sidebar, smooth spring animations throughout, and skeleton loaders while data is loading.
+Live demo: [your-vercel-url-here]  
+GitHub: [your-github-url-here]
 
 ---
 
-## Tech Stack
+## What It Does
 
-- **Next.js 14** (App Router)
-- **Supabase** — PostgreSQL + `@supabase/ssr` for server-side queries
-- **Tailwind CSS** — styling and responsive layout
-- **Framer Motion** — all animations
-- **Lucide React** — icons (dynamically rendered from DB values)
-- **TypeScript** — throughout
+Dark-mode student dashboard where you can track active courses, learning streaks, and weekly activity. Course data is fetched live from a Supabase PostgreSQL database using Next.js Server Components. Everything else — animations, hover states, sidebar transitions — runs on the client with Framer Motion.
 
 ---
 
-## How to Run Locally
+## Stack
+
+- **Next.js 14** — App Router, React Server Components
+- **Supabase** — PostgreSQL database, `@supabase/ssr` for secure server-side queries
+- **Tailwind CSS** — all styling and responsive layout
+- **Framer Motion** — every animation in the app
+- **Lucide React** — icons, dynamically rendered from database values
+- **TypeScript** — end to end
+
+---
+
+## Running Locally
 
 ```bash
-git clone https://github.com/your-username/Learning_Platform-dashboard
-cd Learning_Platform-dashboard
+git clone https://github.com/your-username/next-gen-learning-dashboard
+cd next-gen-learning-dashboard
 npm install
 ```
 
-Copy the example env file and fill in your Supabase credentials:
+Set up your env file:
 
 ```bash
 cp .env.local.example .env.local
 ```
+
+Open `.env.local` and add your Supabase credentials:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Then set up the database by running `supabase/schema.sql` in your Supabase SQL editor — it creates the courses table and seeds it with sample data.
+Run the SQL schema in your Supabase SQL editor — the file is at `supabase/schema.sql`. It creates the courses table and seeds it with sample rows automatically.
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — it redirects straight to the dashboard.
+Goes straight to `/dashboard` on load.
 
 ---
 
-## Architectural Decisions
+## Architecture
 
-### Server vs Client Components
+### Server vs Client split
 
-The main `dashboard/page.tsx` is a React Server Component. It creates the Supabase client using `@supabase/ssr` and fetches the courses table directly on the server — no API routes needed, no data exposed to the client before render. The result gets passed down as props to the `CourseGrid` component.
+`dashboard/page.tsx` is a pure Server Component. It connects to Supabase using `@supabase/ssr`, fetches the courses table, and passes the result down as props. Nothing hits the client until the data is ready. No API routes, no useEffect fetching, no loading spinners caused by client-side requests.
 
-The animated parts (cards, sidebar, progress bars) are all `"use client"` components. I kept the boundary clean — server handles data, client handles interaction.
+The animated parts — cards, sidebar, progress bars — are all `"use client"`. Kept the boundary simple: server for data, client for interaction. Any time I needed both in the same component I split it into two files.
 
-### Suspense for Loading States
+### Suspense boundaries
 
-I wrapped the `CoursesSection` (the part that talks to Supabase) in a `<Suspense>` boundary with a skeleton fallback. This means the rest of the page — the hero tile, stats row, activity graph — renders immediately while the database query runs in the background. The skeleton has a shimmer animation so it never feels like the page is frozen.
+Wrapped the courses fetch in a `<Suspense>` boundary so the rest of the page — hero tile, stats row, activity graph — loads immediately while Supabase responds. The fallback is a shimmer skeleton that pulses so it never feels frozen. There's also a `loading.tsx` at the route level as a backup for the initial navigation.
 
-There's also a `loading.tsx` at the route segment level as a safety net for the initial page load.
+### Animations
 
-### Animations Without Layout Shifts
+Everything uses only `transform` and `opacity` — nothing that causes a layout reflow. Tile entrances stagger with a `translateY` + `opacity` fade. Card hover uses `scale(1.015)` with spring physics. The sidebar nav highlight uses `layoutId` so it slides smoothly between items instead of just switching.
 
-Every animation uses only `transform` and `opacity` — nothing that triggers a reflow. The tile entrance uses a staggered `translateY` + `opacity` fade. Card hover uses `scale(1.015)` with spring physics (`stiffness: 300, damping: 20`). The sidebar active highlight uses Framer Motion's `layoutId` so it slides between nav items instead of jumping.
+One thing I had to figure out — the activity heatmap kept throwing React hydration errors. Took me a bit to realise `Math.random()` was running on both server and client and producing different values each time, so the HTML didn't match. Fixed it by replacing it with a seeded deterministic function that always returns the same output for the same input. Obvious once you know but it wasn't immediately obvious.
 
-The one tricky part was the activity heatmap — I was initially generating random data with `Math.random()` which caused a React hydration mismatch between server and client renders. Fixed it by switching to a seeded deterministic function so both environments produce identical output.
+### Dynamic icons
 
-### Dynamic Icon Rendering
-
-The `icon_name` field in Supabase stores a string like `"Atom"` or `"Code2"`. The `CourseCard` component dynamically imports from `lucide-react` using that string as a key. This means you can change icons directly from the database without touching the code.
+The `icon_name` column in Supabase stores a string like `"Globe"` or `"Code2"`. `CourseCard` uses that string as a key to pull the right component from `lucide-react`. Means you can update icons directly from the database without touching any code.
 
 ---
 
@@ -83,33 +84,33 @@ The `icon_name` field in Supabase stores a string like `"Atom"` or `"Code2"`. Th
 ```
 src/
 ├── app/
-│   ├── layout.tsx              # Root layout + font loading
-│   ├── globals.css             # Tailwind base + custom keyframes
+│   ├── layout.tsx              # root layout, font loading
+│   ├── globals.css             # tailwind + custom keyframes
 │   └── dashboard/
-│       ├── page.tsx            # Server Component — fetches from Supabase
-│       ├── layout.tsx          # Sidebar + main content wrapper
-│       └── loading.tsx         # Route-level skeleton fallback
+│       ├── page.tsx            # server component — fetches from Supabase
+│       ├── layout.tsx          # sidebar + main content layout
+│       └── loading.tsx         # route-level skeleton fallback
 ├── components/
 │   ├── sidebar/
-│   │   ├── Sidebar.tsx         # Collapsible nav with spring animation
-│   │   ├── NavLink.tsx         # Active state via usePathname + layoutId
-│   │   └── MobileNav.tsx       # Bottom tab bar for mobile
+│   │   ├── Sidebar.tsx         # desktop nav, fixed width
+│   │   ├── NavLink.tsx         # active state from usePathname + layoutId
+│   │   └── MobileNav.tsx       # bottom tab bar on mobile
 │   ├── tiles/
-│   │   ├── BentoCard.tsx       # Base card with hover + entrance animation
-│   │   ├── HeroTile.tsx        # Greeting + streak badge
-│   │   ├── StatsRow.tsx        # Quick stats (hours, XP, lessons)
-│   │   ├── CourseGrid.tsx      # Renders Supabase courses as cards
-│   │   ├── CourseCard.tsx      # Individual course — icon, title, progress bar
+│   │   ├── BentoCard.tsx       # base card — hover spring, stagger entrance
+│   │   ├── HeroTile.tsx        # greeting + streak badge
+│   │   ├── StatsRow.tsx        # hours, lessons, XP, progress delta
+│   │   ├── CourseGrid.tsx      # maps Supabase rows to CourseCard
+│   │   ├── CourseCard.tsx      # icon, title, animated progress bar
 │   │   └── ActivityTile.tsx    # 16-week contribution heatmap
 │   └── ui/
-│       ├── CourseSkeleton.tsx  # Shimmer placeholder for course cards
-│       └── HeroSkeleton.tsx    # Shimmer placeholder for hero tile
+│       ├── CourseSkeleton.tsx  # shimmer placeholder while courses load
+│       └── HeroSkeleton.tsx    # shimmer placeholder for hero tile
 ├── lib/
-│   ├── supabase/server.ts      # Supabase SSR client (server-only)
-│   ├── utils.ts                # cn() helper
-│   └── activity.ts             # Deterministic activity data + streak logic
+│   ├── supabase/server.ts      # supabase SSR client, server only
+│   ├── utils.ts                # cn() tailwind helper
+│   └── activity.ts             # seeded activity data + streak calc
 └── types/
-    └── index.ts                # Course, NavItem interfaces
+    └── index.ts                # Course, NavItem TypeScript interfaces
 ```
 
 ---
@@ -126,25 +127,36 @@ create table courses (
 );
 ```
 
-Any Lucide icon name works for `icon_name` — `Atom`, `Code2`, `Database`, `Network`, `Globe`, `Brain`, `Cpu`, `Palette`, etc.
+`icon_name` accepts any valid Lucide icon name — `Globe`, `Code2`, `Database`, `BrainCircuit`, `Palette`, `Cloud`, etc.
 
 ---
 
-## Responsive Behaviour
+## Responsive Layout
 
-| Screen | Sidebar | Grid |
+| Screen size | Sidebar | Grid |
 |---|---|---|
-| Mobile < 768px | Hidden — replaced by bottom tab bar | Single column |
-| Tablet 768–1024px | Visible but icon-only (auto-collapsed) | 2 columns |
-| Desktop > 1024px | Full sidebar with labels | 3 columns |
+| Mobile under 768px | Hidden, replaced by bottom tab bar | Single column |
+| Tablet 768–1024px | Visible, icons only | 2 columns |
+| Desktop over 1024px | Full sidebar with labels | 3 columns |
+
+---
+
+## Known Limitations
+
+- Activity data is seeded/mocked — there's no real user_events table yet, that would need auth to be set up first
+- Stats row (hours, XP, lessons) is hardcoded — making those dynamic would need a separate activity tracking table
+- No authentication — the name and avatar in the sidebar are static for now, would swap those out with real session data once auth is added
+- The other nav pages (My Courses, Progress, Rewards) are placeholder stubs — the brief only asked for the dashboard itself
 
 ---
 
 ## Deployment
 
-Deployed on Vercel. To deploy your own:
+Deployed on Vercel.
 
 1. Push to a public GitHub repo
-2. Import the repo on [vercel.com](https://vercel.com)
-3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel's environment variable settings
-4. Deploy — no other config needed
+2. Import on [vercel.com](https://vercel.com)
+3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as environment variables
+4. Deploy
+
+No other config needed — Vercel auto-detects Next.js.
